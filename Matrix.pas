@@ -1,41 +1,33 @@
 program Matrix;
-
 {$APPTYPE CONSOLE}
-
 uses
-  Windows, SyncObjs;
-  
+  Windows, SysUtils, SyncObjs;
 var
   Thread: LongWord;
-  StartLine: array [0..78] of Boolean;
   S: TCriticalSection;
 
 procedure LineFall;
   var
     Coord: TCoord;
     Y: Integer;
+  i: Integer;
 
-  procedure WriteSymbol(var Y: Integer; Rand: Integer); overload;
-    begin
-      Coord.Y := Y;
-      SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Coord);
-      SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), FOREGROUND_GREEN);
-      write(char(Rand));
-      sleep(random(300) + 50);
-      inc(Y);
-    end;
+      procedure WriteSymbol(var Y: Integer; Rand: Integer); overload;
+        begin
+          Coord.Y := Y;
+          SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Coord);
+          S.Enter;
+            write(char(Rand));
+          S.Leave;
+          sleep(random(150) + 50);
+          inc(Y);
+        end;
 
   begin
     randomize;
     Y := 0;
     Coord.Y := 0;
     Coord.X := random(78);
-
-    S.Enter;
-    if StartLine[Coord.X] then
-      ExitThread(0);
-    StartLine[Coord.X] := True;
-    S.Leave;
 
     repeat
       WriteSymbol(Y, random(254)+1);
@@ -44,19 +36,15 @@ procedure LineFall;
     repeat
       WriteSymbol(Y, 32);
     until Y > 24;
-
-    S.enter;
-    StartLine[Coord.X] := False;
-    S.Leave;
     ExitThread(0);
   end;
 
 begin
-
   S := TCriticalSection.Create;
   repeat
+    SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), FOREGROUND_GREEN);
     BeginThread(nil, 0, @LineFall, @LineFall, 0, Thread);
-    Sleep(500);
+    Sleep(350);
   until 2 < 1;
 
   readln;
